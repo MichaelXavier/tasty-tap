@@ -3,6 +3,7 @@
 -- <https://testanything.org/ here>.
 module Test.Tasty.Runners.TAP
     ( tapRunner
+    , tapRunner'
     ) where
 
 
@@ -10,23 +11,28 @@ module Test.Tasty.Runners.TAP
 import           Control.Concurrent.STM
 import qualified Data.IntMap.Strict     as IM
 import           Data.Monoid
+import           System.IO
 import           Test.Tasty.Ingredients
 import           Test.Tasty.Runners
 -------------------------------------------------------------------------------
 
 
 tapRunner :: Ingredient
-tapRunner = TestReporter opts go
+tapRunner = tapRunner' stdout
+
+-------------------------------------------------------------------------------
+tapRunner' :: Handle -> Ingredient
+tapRunner' h = TestReporter opts go
   where opts = []
-        go _ _ = (Just tapCallback)
+        go _ _ = (Just (tapCallback h))
 
 
 -------------------------------------------------------------------------------
-tapCallback :: StatusMap -> IO (Time -> IO Bool)
-tapCallback smap = do
-  putStrLn tapHeader
-  putStrLn (tapPlan smap)
-  results <- mapM (uncurry reportStatus) (IM.toList smap)
+tapCallback :: Handle -> StatusMap -> IO (Time -> IO Bool)
+tapCallback h smap = do
+  hPutStrLn h tapHeader
+  hPutStrLn h (tapPlan smap)
+  results <- mapM (uncurry (reportStatus h)) (IM.toList smap)
   return (const (return (and results)))
 
 
@@ -42,10 +48,10 @@ tapPlan sm | IM.null sm = "Bail out! There were no tests to run."
 
 
 -------------------------------------------------------------------------------
-reportStatus :: Int -> TVar Status -> IO Bool
-reportStatus zeroIdx statRef = do
+reportStatus :: Handle -> Int -> TVar Status -> IO Bool
+reportStatus h zeroIdx statRef = do
     res <- atomically (waitFinished )
-    putStrLn (renderResult res)
+    hPutStrLn h (renderResult res)
     return (resultSuccessful res)
   where testNum = zeroIdx + 1
         waitFinished = do stat <- readTVar statRef
@@ -53,5 +59,8 @@ reportStatus zeroIdx statRef = do
                             Done res -> return res
                             _        -> retry
         renderResult res
-          | resultSuccessful res = "ok " <> show testNum <> " - " <> resultDescription res
-          | otherwise = "not ok " <> show testNum <> " - " <> resultDescription res
+          | resultSuccessful res = "ok " <> show testNum <> desc
+          | otherwise = "not ok " <> show testNum <> desc
+          where desc = case resultDescription res of
+                         "" -> ""
+                         nonEmpty -> " - " <> nonEmpty

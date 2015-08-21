@@ -4,14 +4,51 @@ module Main
 
 
 -------------------------------------------------------------------------------
+import           Control.Exception
+import           System.Directory
+import           System.Exit
+import           System.IO
 import           Test.Tasty
+import           Test.Tasty.Golden
 import           Test.Tasty.HUnit
+-------------------------------------------------------------------------------
 import           Test.Tasty.Runners.TAP
 -------------------------------------------------------------------------------
 
+
+
 --TODO: actually make assertions
 main :: IO ()
-main = defaultMainWithIngredients [tapRunner] exampleTests
+main = do
+  tmpDir <- getTemporaryDirectory
+  defaultMain (tests tmpDir)
+  -- defaultMainWithIngredients [tapRunner] exampleTests
+
+
+-------------------------------------------------------------------------------
+tests :: FilePath -> TestTree
+tests tmpDir = testGroup "Test.Tasty.Runners.TAP"
+  [
+    let tmpPath = tmpDir ++ "/simple.txt"
+    in goldenVsFileDiff "simple.txt"
+                        diffCmd
+                        (goldenPath "simple.txt")
+                        tmpPath
+                        (mkSimple tmpPath)
+  ]
+
+
+-------------------------------------------------------------------------------
+diffCmd :: FilePath -> FilePath -> [String]
+diffCmd ref new = ["diff", "-u", ref, new]
+
+
+-------------------------------------------------------------------------------
+mkSimple :: FilePath -> IO ()
+mkSimple tmpPath = bracket (openFile tmpPath WriteMode) hClose $ \h -> do
+  defaultMainWithIngredients [tapRunner' h] exampleTests `catch` interceptExit
+  where interceptExit :: ExitCode -> IO ()
+        interceptExit _ = return ()
 
 
 -------------------------------------------------------------------------------
@@ -21,3 +58,8 @@ exampleTests = testGroup "some example tests"
     testCase "passes" $ assertBool "uh your computer is busted" True
   , testCase "fails" $ assertFailure "this was doomed"
   ]
+
+
+-------------------------------------------------------------------------------
+goldenPath :: FilePath -> FilePath
+goldenPath fp = "test/golden/" ++ fp
