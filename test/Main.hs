@@ -29,10 +29,10 @@ main = do
 tests :: FilePath -> TestTree
 tests tmpDir = testGroup "Test.Tasty.Runners.TAP"
   [
-    let tmpPath = tmpDir ++ "/simple.txt"
-    in goldenVsFileDiff "simple.txt"
+    let tmpPath = tmpDir ++ "/simple.tap"
+    in goldenVsFileDiff "simple.tap"
                         diffCmd
-                        (goldenPath "simple.txt")
+                        (goldenPath "simple.tap")
                         tmpPath
                         (mkSimple tmpPath)
   ]
