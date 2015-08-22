@@ -1,11 +1,12 @@
 name:                tasty-tap
 version:             0.0.1
-synopsis:            TAP (Test Anything Protocol) formatter for tasty
--- description:
+synopsis:            TAP (Test Anything Protocol) Version 13 formatter for tasty
+description:         A tasty ingredient to output test results in TAP 13 format.
 license:             MIT
 license-file:        LICENSE
 author:              Michael Xavier
 maintainer:          michael@michaelxavier.net
+homepage:            https://github.com/michaelxavier/tasty-tap
 copyright:           (C) 2015 Michael Xavier
 category:            Testing
 build-type:          Simple
@@ -14,6 +15,10 @@ tested-with:   GHC == 7.6.3, GHC == 7.8.4, GHC == 7.10.1
 extra-source-files:
   README.md
   changelog.md
+
+source-repository head
+  type: git
+  location: git://github.com/michaelxavier/tasty-tap.git
 
 flag lib-Werror
   default: False
