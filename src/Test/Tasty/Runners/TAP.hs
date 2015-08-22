@@ -9,10 +9,14 @@ module Test.Tasty.Runners.TAP
 
 -------------------------------------------------------------------------------
 import           Control.Concurrent.STM
+import           Control.Monad
 import qualified Data.IntMap.Strict     as IM
+import           Data.List
+import           Data.Maybe
 import           Data.Monoid
 import           System.IO
 import           Test.Tasty.Ingredients
+import           Test.Tasty.Options
 import           Test.Tasty.Runners
 -------------------------------------------------------------------------------
 
@@ -22,17 +26,25 @@ tapRunner = tapRunner' stdout
 
 -------------------------------------------------------------------------------
 tapRunner' :: Handle -> Ingredient
-tapRunner' h = TestReporter opts go
-  where opts = []
-        go _ _ = (Just (tapCallback h))
+tapRunner' h = TestReporter reporterOpts go
+  where reporterOpts = []
+        go opts tree = (Just (tapCallback h opts tree))
 
 
 -------------------------------------------------------------------------------
-tapCallback :: Handle -> StatusMap -> IO (Time -> IO Bool)
-tapCallback h smap = do
+tapCallback
+  :: Handle
+  -> OptionSet
+  -> TestTree
+  -> StatusMap
+  -> IO (Time -> IO Bool)
+tapCallback h opts tree smap = do
+  let names = IM.fromList (zip [0..] (testsNames opts tree))
   hPutStrLn h tapHeader
   hPutStrLn h (tapPlan smap)
-  results <- mapM (uncurry (reportStatus h)) (IM.toList smap)
+  results <- forM (IM.toList smap) $ \(idx, stat) -> do
+    let n = fromMaybe mempty (IM.lookup idx names)
+    reportStatus h n idx stat
   return (const (return (and results)))
 
 
@@ -48,8 +60,8 @@ tapPlan sm | IM.null sm = "Bail out! There were no tests to run."
 
 
 -------------------------------------------------------------------------------
-reportStatus :: Handle -> Int -> TVar Status -> IO Bool
-reportStatus h zeroIdx statRef = do
+reportStatus :: Handle -> String -> Int -> TVar Status -> IO Bool
+reportStatus h name zeroIdx statRef = do
     res <- atomically (waitFinished )
     hPutStrLn h (renderResult res)
     return (resultSuccessful res)
@@ -59,8 +71,14 @@ reportStatus h zeroIdx statRef = do
                             Done res -> return res
                             _        -> retry
         renderResult res
-          | resultSuccessful res = "ok " <> show testNum <> desc
-          | otherwise = "not ok " <> show testNum <> desc
+          | resultSuccessful res = "ok " <> show testNum <> " - " <> name <> desc
+          | otherwise = "not ok " <> show testNum <> " - " <> name <> desc
+          --TODO: how do we get the test name?
           where desc = case resultDescription res of
                          "" -> ""
-                         nonEmpty -> " - " <> nonEmpty
+                         nonEmpty -> "\n" <> formatDesc nonEmpty
+
+
+-------------------------------------------------------------------------------
+formatDesc :: String -> String
+formatDesc = intercalate "\n" . map ("# " <> ) . lines
