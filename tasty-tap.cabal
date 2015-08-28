@@ -1,5 +1,5 @@
 name:                tasty-tap
-version:             0.0.1
+version:             0.0.2
 synopsis:            TAP (Test Anything Protocol) Version 13 formatter for tasty
 description:         A tasty ingredient to output test results in TAP 13 format.
 license:             MIT
