@@ -16,13 +16,10 @@ import           Test.Tasty.Runners.TAP
 -------------------------------------------------------------------------------
 
 
-
---TODO: actually make assertions
 main :: IO ()
 main = do
   tmpDir <- getTemporaryDirectory
   defaultMain (tests tmpDir)
-  -- defaultMainWithIngredients [tapRunner] exampleTests
 
 
 -------------------------------------------------------------------------------
