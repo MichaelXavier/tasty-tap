@@ -28,7 +28,7 @@ flag lib-Werror
 library
   exposed-modules:     Test.Tasty.Runners.TAP
   build-depends:       base >=4.6 && <4.9
-                     , tasty >= 0.10 && < 0.11
+                     , tasty >= 0.10
                      , stm
                      , containers
   hs-source-dirs:      src
