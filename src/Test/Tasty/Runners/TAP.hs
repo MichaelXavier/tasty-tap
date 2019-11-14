@@ -13,7 +13,6 @@ import           Control.Monad
 import qualified Data.IntMap.Strict     as IM
 import           Data.List
 import           Data.Maybe
-import           Data.Monoid
 import           System.IO
 import           Test.Tasty.Ingredients
 import           Test.Tasty.Options
