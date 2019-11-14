@@ -1,3 +1,6 @@
+0.1.0
+* Update for more recent versions of tasty [#3](https://github.com/MichaelXavier/tasty-tap/pull/3)
+
 0.0.4
 * Allow wider base
 
